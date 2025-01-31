@@ -30,6 +30,10 @@ extension ModelConfiguration: @retroactive Equatable {
         id: "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit"
     )
     
+    public static let deepseek_r1_distill_qwen_1_5b_8bit = ModelConfiguration(
+        id: "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-8bit"
+    )
+    
     public static let deepseek_r1_distill_llama_8b_4bit = ModelConfiguration(
         id: "mlx-community/DeepSeek-R1-Distill-Llama-8B-4bit"
     )
@@ -69,6 +73,7 @@ extension ModelConfiguration: @retroactive Equatable {
     #if os(iOS)
     public static var availableModels: [ModelConfiguration] = [
         deepseek_r1_distill_qwen_1_5b_4bit,
+        deepseek_r1_distill_qwen_1_5b_8bit,
         llama_3_2_1b_4bit,
         llama_3_2_3b_4bit,
         phi_3_5_mini_instruct_4bit,
@@ -81,6 +86,7 @@ extension ModelConfiguration: @retroactive Equatable {
     #else
     public static var availableModels: [ModelConfiguration] = [
         deepseek_r1_distill_llama_8b_4bit,
+        deepseek_r1_distill_qwen_1_5b_8bit,
         deepseek_r1_distill_qwen_1_5b_4bit,
         llama_3_2_1b_4bit,
         llama_3_2_3b_4bit,
@@ -123,11 +129,22 @@ extension ModelConfiguration: @retroactive Equatable {
             let role = message.role.rawValue
             history.append([
                 "role": role,
-                "content": message.content
+                "content": formatForTokenizer(message.content), // Remove think tags and add a space before each message to fix the Jinja chat template issue.
             ])
         }
         
         return history
+    }
+    
+    // TODO: Remove this function when Jinja gets updated
+    func formatForTokenizer(_ message: String) -> String {
+        if self.modelType == .reasoning {
+            return " " + message
+                .replacingOccurrences(of: "<think>", with: "")
+                .replacingOccurrences(of: "</think>", with: "")
+        }
+        
+        return message
     }
     
     /// Returns the model's approximate size, in GB.
