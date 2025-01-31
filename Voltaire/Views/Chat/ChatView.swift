@@ -143,38 +143,51 @@ struct ChatView: View {
     
     var modelPickerMenu: some View {
         Menu(content: {
-            Section(header: Text(appManager.userInterfaceIdiom == .phone ? chatTitle : "Installed")) {
-                ForEach(appManager.installedModels, id: \.self) { modelName in
-                    Button {
-                        Task {
-                            if let model = ModelConfiguration.availableModels.first(where: {
-                                $0.name == modelName
-                            }) {
-                                appManager.currentModelName = modelName
-                                #if os(iOS)
-                                if appManager.shouldPlayHaptics {
-                                    Haptic.shared.play(.medium)
+                
+                if appManager.userInterfaceIdiom == .phone {
+                    Section(chatTitle) {
+                        Button("Rename", systemImage: "pencil") {
+                            UIApplication.shared.alertWithTextField(title: "Rename Chat", body: "", placeholder: (currentThread?.title ?? ""), onOK: {new in
+                                if !new.isEmpty {
+                                    currentThread?.title = new
                                 }
-                                #endif
-                                await llm.switchModel(model)
-                            }
-                        }
-                    } label: {
-                        Label {
-                            Text(appManager.modelDisplayName(modelName))
-                                .fontDesign(.serif)
-                        } icon: {
-                            Image(systemName: appManager.currentModelName == modelName ? "checkmark.circle.fill" : "circle")
+                            })
                         }
                     }
                 }
-            }
-            
-            Button {
-                showModelPicker.toggle()
-            } label: {
-                Label("Download more models...", systemImage: "arrow.down.circle.dotted")
-            }
+                
+                Section(appManager.userInterfaceIdiom == .phone ? "Models" : "Installed") {
+                    ForEach(appManager.installedModels, id: \.self) { modelName in
+                        Button {
+                            Task {
+                                if let model = ModelConfiguration.availableModels.first(where: {
+                                    $0.name == modelName
+                                }) {
+                                    appManager.currentModelName = modelName
+#if os(iOS)
+                                    if appManager.shouldPlayHaptics {
+                                        Haptic.shared.play(.medium)
+                                    }
+#endif
+                                    await llm.switchModel(model)
+                                }
+                            }
+                        } label: {
+                            Label {
+                                Text(appManager.modelDisplayName(modelName))
+                                    .fontDesign(.serif)
+                            } icon: {
+                                Image(systemName: appManager.currentModelName == modelName ? "checkmark.circle.fill" : "circle")
+                            }
+                        }
+                    }
+                    
+                    Button {
+                        showModelPicker.toggle()
+                    } label: {
+                        Label("Download more models...", systemImage: "arrow.down.circle.dotted")
+                    }
+                }
 #if os(macOS)
             .buttonStyle(.borderless)
 #endif
